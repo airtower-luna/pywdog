@@ -1,0 +1,1 @@
+option('watchdogd', type: 'string', value: 'watchdogd', description: 'path to watchdogd binary to use in tests')
