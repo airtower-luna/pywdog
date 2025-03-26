@@ -1,0 +1,14 @@
+[build-system]
+build-backend = 'mesonpy'
+requires = ['meson-python', 'cffi']
+
+[project]
+name = 'pywdog'
+version = '0.0.1'
+authors = [
+    {name = 'Fiona Klute', email = 'fiona.klute@gmx.de'},
+]
+description = 'Watchdogd subscriber library, based on libwdog'
+license = 'ISC'
+requires-python = '>=3.13'
+dependencies = ['cffi']
