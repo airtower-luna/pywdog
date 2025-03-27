@@ -4,7 +4,6 @@ project(
 )
 
 wdog = dependency('libwdog', version: '>=4.0')
-watchdogd = find_program(get_option('watchdogd'), required: true)
 
 py = import('python').find_installation(pure: false)
 
@@ -27,9 +26,12 @@ py.install_sources('wdog.py')
 
 pytest = find_program('pytest')
 
-test('pytest', pytest, args: [
-       '-v',
-       '--override-ini', '='.join('pythonpath', meson.global_build_root()),
-       [files('test_wdog.py')]],
-     env: ['='.join('TEST_WATCHDOGD', watchdogd.full_path())],
-     depends: [mod])
+if get_option('tests')
+  watchdogd = find_program(get_option('watchdogd'), required: true)
+  test('pytest', pytest, args: [
+	 '-v',
+	 '--override-ini', '='.join('pythonpath', meson.global_build_root()),
+	 [files('test_wdog.py')]],
+       env: ['='.join('TEST_WATCHDOGD', watchdogd.full_path())],
+       depends: [mod])
+endif
