@@ -1,5 +1,7 @@
 project(
   'pywdog', 'c',
+  license: 'ISC',
+  license_files: ['LICENSE'],
   meson_version: '>=1.1'
 )
 
