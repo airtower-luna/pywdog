@@ -77,11 +77,12 @@ class Wdog:
             self._handle_error()
             self.pet()
 
-    def extend(self, timeout: int | float):
+    def set_timeout(self, timeout: int | float):
+        """Pet the watchdog and change the configured timeout."""
         if self._id is None:
             raise WdogStateException('not subscribed')
         self._timeout = int(timeout * 1000)
         ret = _libwdog.lib.wdog_extend_kick(self._id, self._timeout, self._ack)
         if ret < 0:
             self._handle_error()
-            self.extend(timeout)
+            self.set_timeout(timeout)

@@ -71,16 +71,16 @@ def test_fail(watchdogd):
     watchdogd.communicate(None, timeout=2)
 
 
-def test_extend():
-    w = wdog.Wdog('extend')
+def test_set_timeout():
+    w = wdog.Wdog('set_timeout')
     w.subscribe(1)
-    w.extend(2.0)
+    w.set_timeout(2.0)
     time.sleep(1.5)
     w.pet()
     w.unsubscribe()
 
 
-@pytest.mark.parametrize('method', ['pet', 'extend'])
+@pytest.mark.parametrize('method', ['pet', 'set_timeout'])
 def test_reconnect(
         method: str, watchdogd_bin: str, watchdogd_config: Path, watchdogd):
     w = wdog.Wdog(method)
@@ -91,7 +91,7 @@ def test_reconnect(
     proc = start_watchdogd(watchdogd_bin, watchdogd_config)
     try:
         if method == 'extend':
-            w.extend(1.5)
+            w.set_timeout(1.5)
         else:
             w.pet()
         w.unsubscribe()
