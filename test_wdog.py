@@ -49,7 +49,7 @@ def test_ping():
 
 def test_full(watchdogd):
     w = wdog.Wdog('test')
-    w.subscribe(2000)
+    w.subscribe(2.0)
     for _ in range(5):
         time.sleep(.5)
         w.pet()
@@ -59,22 +59,22 @@ def test_full(watchdogd):
 @pytest.mark.parametrize('label', [None, b'test'])
 def test_labels(label):
     w = wdog.Wdog(label)
-    w.subscribe(2000)
+    w.subscribe(2.0)
     w.pet()
     w.unsubscribe()
 
 
 def test_fail(watchdogd):
     w = wdog.Wdog(b'test')
-    w.subscribe(1000)
+    w.subscribe(1)
     w.pet()
     watchdogd.communicate(None, timeout=2)
 
 
 def test_extend():
     w = wdog.Wdog('extend')
-    w.subscribe(1000)
-    w.extend(2000)
+    w.subscribe(1)
+    w.extend(2.0)
     time.sleep(1.5)
     w.pet()
     w.unsubscribe()
@@ -84,7 +84,7 @@ def test_extend():
 def test_reconnect(
         method, watchdogd_bin: str, watchdogd_config: Path, watchdogd):
     w = wdog.Wdog('extend')
-    w.subscribe(1000)
+    w.subscribe(1)
     w.pet()
     watchdogd.terminate()
     watchdogd.communicate()
@@ -99,7 +99,7 @@ def test_reconnect(
 
 def test_reconnect_fail(watchdogd):
     w = wdog.Wdog('extend')
-    w.subscribe(1000)
+    w.subscribe(1)
     w.pet()
     watchdogd.terminate()
     watchdogd.communicate()

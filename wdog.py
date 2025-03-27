@@ -18,8 +18,8 @@ class Wdog:
         self._ack = _libwdog.ffi.new('unsigned int[1]')
         # current subscription ID if subscribed, otherwise None
         self._id: int | None = None
-        # used to track the configured timeout, only valid while
-        # subscribed
+        # Used to track the configured timeout in ms, only valid while
+        # subscribed.
         self._timeout = 0
 
         if isinstance(label, bytes):
@@ -47,15 +47,18 @@ class Wdog:
     def ping(self) -> bool:
         return ping()
 
-    def subscribe(self, timeout: int) -> None:
+    def subscribe(self, timeout: int | float) -> None:
+        """Subscribe to the watchdogd supervisor, with the given
+        timeout in seconds."""
         if self._id is not None:
             raise WdogStateException('already subscribed')
-        self._id = _libwdog.lib.wdog_subscribe(self.clabel, timeout, self._ack)
+        self._timeout = int(timeout * 1000)
+        self._id = _libwdog.lib.wdog_subscribe(
+            self.clabel, self._timeout, self._ack)
         if self._id < 0:
             err = _libwdog.ffi.errno
             self._id = None
             raise OSError(err, os.strerror(err))
-        self._timeout = timeout
 
     def unsubscribe(self) -> None:
         if self._id is None:
@@ -74,11 +77,11 @@ class Wdog:
             self._handle_error()
             self.pet()
 
-    def extend(self, timeout: int):
+    def extend(self, timeout: int | float):
         if self._id is None:
             raise WdogStateException('not subscribed')
-        ret = _libwdog.lib.wdog_extend_kick(self._id, timeout, self._ack)
+        self._timeout = int(timeout * 1000)
+        ret = _libwdog.lib.wdog_extend_kick(self._id, self._timeout, self._ack)
         if ret < 0:
             self._handle_error()
             self.extend(timeout)
-        self._timeout = timeout
