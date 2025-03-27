@@ -108,3 +108,9 @@ def test_reconnect_fail(watchdogd):
     watchdogd.communicate()
     with pytest.raises(ConnectionRefusedError):
         w.pet()
+
+
+def test_too_short():
+    w = wdog.Wdog('too_short')
+    with pytest.raises(ValueError):
+        w.subscribe(.2)

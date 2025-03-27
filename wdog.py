@@ -64,7 +64,10 @@ class Wdog:
         if self._id < 0:
             err = _libwdog.ffi.errno
             self._id = None
-            raise OSError(err, os.strerror(err))
+            if err == errno.EINVAL:
+                raise ValueError('invalid timeout')
+            else:
+                raise OSError(err, os.strerror(err))
 
     def unsubscribe(self) -> None:
         """Unsubscribe from the watchdog. After this watchdogd does
