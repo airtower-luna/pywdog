@@ -4,8 +4,8 @@ import os
 
 
 def ping() -> bool:
-    i = _libwdog.lib.wdog_ping()
-    return i == 0
+    """Check if watchdogd is reachable, return True if yes."""
+    return _libwdog.lib.wdog_ping() == 0
 
 
 class WdogStateException(Exception):
@@ -14,6 +14,15 @@ class WdogStateException(Exception):
 
 class Wdog:
     def __init__(self, label: str | bytes | None):
+        """Create a watchdogd supervisor client with the given client
+        label, which may appear in watchdogd logs. The client must
+        subscribe before watchdogd will supervise it.
+
+        If a subscribed client missed the timeout to pet the watchdog,
+        watchdogd will restart the system or call a supervisor script,
+        depending on its configuration.
+
+        """
         # buffer for the latest ack value
         self._ack = _libwdog.ffi.new('unsigned int[1]')
         # current subscription ID if subscribed, otherwise None
@@ -44,9 +53,6 @@ class Wdog:
         else:
             raise OSError(err, os.strerror(err))
 
-    def ping(self) -> bool:
-        return ping()
-
     def subscribe(self, timeout: int | float) -> None:
         """Subscribe to the watchdogd supervisor, with the given
         timeout in seconds."""
@@ -61,6 +67,8 @@ class Wdog:
             raise OSError(err, os.strerror(err))
 
     def unsubscribe(self) -> None:
+        """Unsubscribe from the watchdog. After this watchdogd does
+        not require regular pets."""
         if self._id is None:
             raise WdogStateException('not subscribed')
         ret = _libwdog.lib.wdog_unsubscribe(self._id, self._ack[0])
@@ -70,6 +78,11 @@ class Wdog:
         self._id = None
 
     def pet(self) -> None:
+        """Pet the watchdog. This must be called at least once within
+        timeout, calculated from subscription (at the start) or
+        previous pet.
+
+        """
         if self._id is None:
             raise WdogStateException('not subscribed')
         ret = _libwdog.lib.wdog_kick2(self._id, self._ack)
@@ -78,7 +91,8 @@ class Wdog:
             self.pet()
 
     def set_timeout(self, timeout: int | float):
-        """Pet the watchdog and change the configured timeout."""
+        """Pet the watchdog and change the configured timeout. New
+        timeout is in seconds."""
         if self._id is None:
             raise WdogStateException('not subscribed')
         self._timeout = int(timeout * 1000)
