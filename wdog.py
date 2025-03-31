@@ -93,7 +93,7 @@ class Wdog:
             self._handle_error()
             self.pet()
 
-    def set_timeout(self, timeout: int | float):
+    def set_timeout(self, timeout: int | float) -> None:
         """Pet the watchdog and change the configured timeout. New
         timeout is in seconds."""
         if self._id is None:

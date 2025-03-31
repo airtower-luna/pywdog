@@ -1,8 +1,11 @@
 import os
 import pytest
+import re
 import subprocess
 import time
 import wdog
+from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
 
@@ -12,21 +15,41 @@ def watchdogd_bin():
     return os.environ.get('TEST_WATCHDOGD', 'watchdogd')
 
 
+@dataclass
+class WatchdogFiles:
+    config: Path
+    state: Path
+
+
 @pytest.fixture(scope='session')
-def watchdogd_config(tmp_path_factory) -> Path:
-    wdog_config = tmp_path_factory.mktemp('watchdogd') / 'watchdogd.conf'
-    wdog_config.write_text(dedent('''\
-    supervisor {
+def watchdogd_setup(tmp_path_factory) -> WatchdogFiles:
+    wdog_dir = tmp_path_factory.mktemp('watchdogd')
+    wdog_files = WatchdogFiles(
+        wdog_dir / 'watchdogd.conf',
+        wdog_dir / 'watchdogd.state',
+    )
+    wdog_dev = wdog_dir / 'dev'
+    wdog_dev.touch()
+    wdog_files.config.write_text(dedent(f'''\
+    device {wdog_dev!s} {{
+        timeout    = 15
+        interval   = 7
+        safe-exit  = true
+    }}
+    supervisor {{
         enabled = true
-    }
+    }}
+    reset-reason {{
+        enabled = true
+        file = "{wdog_files.state!s}"
+    }}
     '''))
-    return wdog_config
+    return wdog_files
 
 
 def start_watchdogd(executable: str, config: Path) -> subprocess.Popen:
     proc = subprocess.Popen([
-        executable, '-f', str(config), '-n', '--test-mode',
-        '--loglevel=debug'])
+        executable, '-f', str(config), '-n', '--loglevel=debug'])
     for _ in range(10):
         if wdog.ping():
             break
@@ -34,13 +57,28 @@ def start_watchdogd(executable: str, config: Path) -> subprocess.Popen:
     return proc
 
 
+def parse_state(statefile: Path) -> dict[str, str]:
+    state: dict[str, str] = dict()
+    with statefile.open('r') as fh:
+        for line in fh:
+            m = re.match(r'^(.*\w)\s+:\s+(\S.*)$', line)
+            assert m is not None
+            state[m.group(1)] = m.group(2)
+    return state
+
+
 @pytest.fixture(autouse=True)
-def watchdogd(watchdogd_bin, watchdogd_config):
-    proc = start_watchdogd(watchdogd_bin, watchdogd_config)
+def watchdogd(watchdogd_bin: str, watchdogd_setup: WatchdogFiles) \
+        -> Iterator[subprocess.Popen]:
+    proc = start_watchdogd(watchdogd_bin, watchdogd_setup.config)
     yield proc
     if proc.poll() is None:
         proc.terminate()
-        proc.communicate()
+        try:
+            proc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
 
 
 def test_ping():
@@ -64,11 +102,22 @@ def test_labels(label):
     w.unsubscribe()
 
 
-def test_fail(watchdogd):
-    w = wdog.Wdog(b'test')
+def test_fail(watchdogd_setup: WatchdogFiles, watchdogd: subprocess.Popen):
+    label = 'test'
+    w = wdog.Wdog(label)
     w.subscribe(1)
+    subscribed = time.time()
     w.pet()
-    watchdogd.communicate(None, timeout=2)
+    for _ in range(20):
+        if watchdogd_setup.state.is_file() \
+           and watchdogd_setup.state.stat().st_mtime > subscribed:
+            break
+        time.sleep(.1)
+    state = parse_state(watchdogd_setup.state)
+    print(state)
+    assert int(state['PID']) == os.getpid()
+    assert state['Label'] == label
+    assert 'Failed to meet deadline' in state['Reset reason']
 
 
 def test_set_timeout():
@@ -82,13 +131,14 @@ def test_set_timeout():
 
 @pytest.mark.parametrize('method', ['pet', 'set_timeout'])
 def test_reconnect(
-        method: str, watchdogd_bin: str, watchdogd_config: Path, watchdogd):
+        method: str, watchdogd_bin: str, watchdogd_setup: WatchdogFiles,
+        watchdogd: subprocess.Popen):
     w = wdog.Wdog(method)
     w.subscribe(1)
     w.pet()
     watchdogd.terminate()
     watchdogd.communicate()
-    proc = start_watchdogd(watchdogd_bin, watchdogd_config)
+    proc = start_watchdogd(watchdogd_bin, watchdogd_setup.config)
     try:
         if method == 'extend':
             w.set_timeout(1.5)
@@ -97,16 +147,20 @@ def test_reconnect(
         w.unsubscribe()
     finally:
         proc.terminate()
-        proc.communicate()
+        try:
+            proc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.communicate()
 
 
-def test_reconnect_fail(watchdogd):
+def test_reconnect_fail(watchdogd: subprocess.Popen):
     w = wdog.Wdog('reconnect_fail')
     w.subscribe(1)
     w.pet()
     watchdogd.terminate()
     watchdogd.communicate()
-    with pytest.raises(ConnectionRefusedError):
+    with pytest.raises((ConnectionRefusedError, BlockingIOError)):
         w.pet()
 
 

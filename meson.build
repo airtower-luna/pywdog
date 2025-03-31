@@ -30,7 +30,8 @@ pytest = find_program('pytest')
 
 if get_option('tests')
   watchdogd = find_program(get_option('watchdogd'), required: true)
-  test('pytest', pytest, args: [
+  test('pytest', files('test-namespace-wrapper.sh'), args: [
+	 pytest.full_path(),
 	 '-v',
 	 '--override-ini', '='.join('pythonpath', meson.global_build_root()),
 	 [files('test_wdog.py')]],
