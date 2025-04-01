@@ -1,4 +1,4 @@
-import _libwdog  # type: ignore
+from . import _libwdog  # type: ignore
 import errno
 import os
 

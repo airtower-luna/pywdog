@@ -23,5 +23,6 @@ mod = py.extension_module(
   gen_src,
   install: true,
   dependencies: [wdog, py.dependency()],
+  subdir: 'wdog'
 )
 subdir('src')
