@@ -16,4 +16,11 @@ dependencies = ['cffi']
 [project.optional-dependencies]
 tests = [
     'pytest',
+    'pytest-cov',
+]
+
+[tool.coverage.paths]
+source = [
+    'src/',
+    '.nox/test-*/lib/python*/site-packages/wdog/',
 ]
