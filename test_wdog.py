@@ -168,3 +168,22 @@ def test_too_short():
     w = wdog.Wdog('too_short')
     with pytest.raises(ValueError):
         w.subscribe(.2)
+
+
+@pytest.mark.parametrize('method', ['pet', 'set_timeout', 'unsubscribe'])
+def test_invalid_state(method: str):
+    w = wdog.Wdog('invalid_state')
+    with pytest.raises(wdog.WdogStateException, match=r'not subscribed'):
+        if method == 'set_timeout':
+            getattr(w, method)(1.0)
+        else:
+            getattr(w, method)()
+
+
+def test_double_subscribe():
+    w = wdog.Wdog('invalid_state')
+    w.subscribe(2.0)
+    with pytest.raises(wdog.WdogStateException, match=r'already subscribed'):
+        w.subscribe(2.0)
+    w.pet()
+    w.unsubscribe()
