@@ -24,17 +24,4 @@ mod = py.extension_module(
   install: true,
   dependencies: [wdog, py.dependency()],
 )
-py.install_sources('wdog.py')
-
-pytest = find_program('pytest')
-
-if get_option('tests')
-  watchdogd = find_program(get_option('watchdogd'), required: true)
-  test('pytest', files('test-namespace-wrapper.sh'), args: [
-	 pytest.full_path(),
-	 '-v',
-	 '--override-ini', '='.join('pythonpath', meson.global_build_root()),
-	 [files('test_wdog.py')]],
-       env: ['='.join('TEST_WATCHDOGD', watchdogd.full_path())],
-       depends: [mod])
-endif
+subdir('src')
