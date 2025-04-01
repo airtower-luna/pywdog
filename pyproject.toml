@@ -9,9 +9,21 @@ authors = [
     {name = 'Fiona Klute', email = 'fiona.klute@gmx.de'},
 ]
 description = 'Watchdogd subscriber library, based on libwdog'
+readme = 'README.md'
 license = 'ISC'
+license-files = ['LICENSE']
 requires-python = '>=3.13'
 dependencies = ['cffi']
+classifiers = [
+    'Programming Language :: Python :: 3',
+    'Operating System :: POSIX :: Linux',
+    'Topic :: System :: Networking :: Monitoring :: Hardware Watchdog',
+]
+keywords = ['watchdog', 'watchdogd', 'libwdog']
+
+[project.urls]
+Homepage = 'https://github.com/airtower-luna/pywdog'
+Repository = 'https://github.com/airtower-luna/pywdog.git'
 
 [project.optional-dependencies]
 tests = [
