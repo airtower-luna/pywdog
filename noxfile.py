@@ -1,9 +1,11 @@
 import os
 import nox
+import shutil
 from pathlib import Path
 
 wrapper = Path(__file__).parent / 'test-namespace-wrapper.sh'
 build_dir = Path(__file__).parent / 'noxbuild'
+cov_dir = Path(__file__).parent / 'htmlcov'
 
 
 @nox.session(python=['3.13'])
@@ -31,4 +33,16 @@ def coverage(session):
     """Generate combined coverage report."""
     session.install('coverage')
     session.run('coverage', 'combine')
-    session.run('coverage', 'html')
+    session.run('coverage', 'html', '-d', str(cov_dir))
+
+
+@nox.session(default=False, python=False)
+def clean(session):
+    for d in (build_dir, cov_dir, Path('.coverage')):
+        try:
+            if d.is_dir():
+                shutil.rmtree(d)
+            else:
+                d.unlink()
+        except FileNotFoundError:
+            pass
