@@ -36,3 +36,6 @@ source = [
     'src/',
     '.nox/test-*/lib/python*/site-packages/wdog/',
 ]
+
+[tool.meson-python.args]
+install = ['--skip-subprojects']

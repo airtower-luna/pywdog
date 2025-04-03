@@ -1,0 +1,8 @@
+[wrap-git]
+url = https://github.com/troglobit/watchdogd.git
+revision = b25441053ecc91dd98ef3f628ca6a652e68bc153
+depth = 1
+patch_directory = watchdogd
+
+[provide]
+dependency_names = libwdog

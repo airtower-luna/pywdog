@@ -1,0 +1,2 @@
+option('watchdogd-fallback', type: 'boolean', value: true,
+       description: 'build watchdogd as subproject if not found on the system, and link libwdog statically')
