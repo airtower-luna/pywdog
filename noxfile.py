@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 
 repo = Path(__file__).parent
-wrapper = repo / 'test-namespace-wrapper.sh'
+wrapper = repo / 'tests/test-namespace-wrapper.sh'
 build_dir = repo / 'noxbuild'
 cov_dir = repo / 'htmlcov'
 
