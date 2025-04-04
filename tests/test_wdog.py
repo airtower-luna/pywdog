@@ -10,11 +10,6 @@ from pathlib import Path
 from textwrap import dedent
 
 
-@pytest.fixture(scope='session')
-def watchdogd_bin():
-    return os.environ.get('TEST_WATCHDOGD', 'watchdogd')
-
-
 @dataclass
 class WatchdogFiles:
     config: Path
